@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>빌링키 발급 성공</title>
+</head>
+<body>
+    <h1>🎉 카드 등록 및 빌링 객체 생성 완료!</h1>
+    
+    <div>
+        <h3>등록된 정보</h3>
+        <ul>
+            <li><strong>Billing Key:</strong> <span th:text="${billingResponse.billingKey}"></span></li>
+            <li><strong>Customer Key:</strong> <span th:text="${billingResponse.customerKey}"></span></li>
+            <li><strong>Card Info:</strong> <span th:text="${billingResponse.card.number}"></span> (<span th:text="${billingResponse.card.cardType}"></span>)</li>
+        </ul>
+    </div>
+
+    <hr/>
+    <p>이제 포스트맨에서 <strong>Customer Key</strong> 또는 <strong>Member ID</strong>를 사용하여 10원 결제를 테스트할 수 있습니다.</p>
+</body>
+</html>

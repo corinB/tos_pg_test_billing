@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>토스페이먼츠 정기결제 테스트</title>
+    <script src="https://js.tosspayments.com/v1/payment"></script>
+</head>
+<body>
+    <h1>정기결제 카드 등록 테스트</h1>
+    <p>아래 버튼을 눌러 카드를 등록하세요.</p>
+    
+    <button id="card-button">카드 등록하기 (자동결제)</button>
+
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        var clientKey = /*[[${clientKey}]]*/ 'test_ck_...';
+        var customerKey = /*[[${customerKey}]]*/ 'test_customer_key';
+        var customerEmail = /*[[${customerEmail}]]*/ '';
+        var customerName = /*[[${customerName}]]*/ '';
+        /*]]>*/
+
+        var tossPayments = TossPayments(clientKey);
+
+        document.getElementById('card-button').addEventListener('click', function () {
+            tossPayments.requestBillingAuth('카드', {
+                customerKey: customerKey,
+                customerEmail: customerEmail,
+                customerName: customerName,
+                successUrl: window.location.origin + '/success',
+                failUrl: window.location.origin + '/fail'
+            })
+            .catch(function (error) {
+                if (error.code === 'USER_CANCEL') {
+                    // 사용자가 취소한 경우
+                } else {
+                    // 그 외 에러 처리
+                    alert(error.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

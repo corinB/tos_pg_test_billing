@@ -10,7 +10,7 @@
 *   **Framework**: Spring Boot 3.5.9
 *   **Database**: MySQL (JPA/Hibernate)
 *   **Payment Gateway**: Toss Payments (Billing API)
-*   **Frontend**: Thymeleaf (카드 등록용), Toss Payments SDK
+*   **Frontend**: Thymeleaf, **Toss Payments SDK v2**
 
 ---
 
@@ -42,7 +42,7 @@
 ## 3. 🔄 핵심 결제 프로세스 (Logic Flow)
 
 ### Step 1. 카드 등록 (Frontend -> Toss -> Backend)
-1.  **Frontend**: `TossPayments.requestBillingAuth('카드', ...)` 호출
+1.  **Frontend**: `tossPayments.payment({ customerKey })` 객체 생성 후 `requestBillingAuth` 호출
 2.  **User**: 결제창에서 카드 정보 입력 및 본인인증
 3.  **Toss**: 성공 시 `authKey`를 담아 Redirect URL 호출
 4.  **Backend**:
@@ -53,7 +53,7 @@
 1.  **Request**: 특정 유저(Member ID)에 대한 결제 요청
 2.  **Service**:
     *   DB에서 유저의 `billingKey` 조회
-    *   토스 API (`/v1/billing/{billingKey}`) 호출하여 결제 승인 요청
+    *   토스 API (`/v1/billing/{billingKey}`) 호출하여 결제 승인 요청 (금액 100원 이상)
 3.  **Result**: 성공 시 **PaymentHistory 엔티티에 기록** 저장
 
 ---
@@ -91,7 +91,7 @@ public BillingKeyResponse issueBillingKey(String authKey, String customerKey) {
             .body(BillingKeyResponse.class);
 }
 
-// 2. 결제 승인 요청
+// 2. 결제 승인 요청 (최소 100원)
 public PaymentResponse payWithBillingKey(...) {
     // ...
     return restClient.post()
@@ -102,25 +102,33 @@ public PaymentResponse payWithBillingKey(...) {
 }
 ```
 
-### 5-2. Frontend: SDK 연동
+### 5-2. Frontend: SDK v2 연동
 유저 정보를 포함하여 결제창을 호출합니다 (UX 최적화).
 
 ```javascript
-// index.html
-tossPayments.requestBillingAuth('카드', {
-    customerKey: customerKey,
-    customerEmail: customerEmail, // 미리 채움
-    customerName: customerName,   // 미리 채움
+// index.html (SDK v2)
+
+// 1. 초기화
+const tossPayments = TossPayments(clientKey);
+
+// 2. 결제 객체 생성
+const payment = tossPayments.payment({ customerKey });
+
+// 3. 빌링 인증 요청 (Async/Await 사용)
+await payment.requestBillingAuth({
+    method: "CARD",
     successUrl: window.location.origin + '/success',
-    failUrl: window.location.origin + '/fail'
-})
+    failUrl: window.location.origin + '/fail',
+    customerEmail: customerEmail,
+    customerName: customerName
+});
 ```
 
 ---
 
 ## 6. ⚠️ 운영 주의사항
 
-1.  **최소 결제 금액**: 신용카드 자동결제는 **최소 100원** 이상이어야 합니다.
+1.  **최소 결제 금액**: 신용카드 자동결제는 **최소 100원** 이상이어야 합니다. (이전 10원에서 상향 수정됨)
 2.  **테스트 환경**: 현재 `test_ck_` 키를 사용 중이므로 실제 과금되지 않습니다. 상용 전환 시 `live_ck_` 키로 교체해야 합니다.
 3.  **보안**: `billingKey`는 유출 시 해당 유저 카드로 결제가 가능하므로 보안에 유의해야 합니다. (본 프로젝트는 DB에 평문 저장 중이므로, 실제 운영 시 암호화 권장)
 

@@ -2,41 +2,54 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>토스페이먼츠 정기결제 테스트</title>
-    <script src="https://js.tosspayments.com/v1/payment"></script>
+    <title>토스페이먼츠 정기결제 테스트 (SDK v2)</title>
+    <!-- 1. SDK v2 스크립트 로드 -->
+    <script src="https://js.tosspayments.com/v2/standard"></script>
 </head>
 <body>
-    <h1>정기결제 카드 등록 테스트</h1>
+    <h1>정기결제 카드 등록 테스트 (SDK v2)</h1>
     <p>아래 버튼을 눌러 카드를 등록하세요.</p>
     
-    <button id="card-button">카드 등록하기 (자동결제)</button>
+    <div style="background-color: #f9f9f9; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+        <p><strong>Customer Key:</strong> <span th:text="${customerKey}"></span></p>
+        <p><strong>Name:</strong> <span th:text="${customerName}"></span></p>
+        <p><strong>Email:</strong> <span th:text="${customerEmail}"></span></p>
+    </div>
+
+    <button id="card-button" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">카드 등록하기 (자동결제)</button>
 
     <script th:inline="javascript">
         /*<![CDATA[*/
-        var clientKey = /*[[${clientKey}]]*/ 'test_ck_...';
-        var customerKey = /*[[${customerKey}]]*/ 'test_customer_key';
-        var customerEmail = /*[[${customerEmail}]]*/ '';
-        var customerName = /*[[${customerName}]]*/ '';
+        const clientKey = /*[[${clientKey}]]*/ 'test_ck_...';
+        const customerKey = /*[[${customerKey}]]*/ 'test_customer_key';
+        const customerEmail = /*[[${customerEmail}]]*/ '';
+        const customerName = /*[[${customerName}]]*/ '';
         /*]]>*/
 
-        var tossPayments = TossPayments(clientKey);
+        // 2. 초기화 (Client Key 사용)
+        const tossPayments = TossPayments(clientKey);
+        
+        // 3. Payment 객체 생성 (CustomerKey 필수)
+        const payment = tossPayments.payment({ customerKey });
 
-        document.getElementById('card-button').addEventListener('click', function () {
-            tossPayments.requestBillingAuth('카드', {
-                customerKey: customerKey,
-                customerEmail: customerEmail,
-                customerName: customerName,
-                successUrl: window.location.origin + '/success',
-                failUrl: window.location.origin + '/fail'
-            })
-            .catch(function (error) {
+        document.getElementById('card-button').addEventListener('click', async function () {
+            try {
+                // 4. 빌링(자동결제) 인증 요청 - SDK v2 방식 (payment 객체 사용)
+                await payment.requestBillingAuth({
+                    method: "CARD", 
+                    successUrl: window.location.origin + '/success',
+                    failUrl: window.location.origin + '/fail',
+                    customerEmail: customerEmail,
+                    customerName: customerName
+                });
+            } catch (error) {
                 if (error.code === 'USER_CANCEL') {
-                    // 사용자가 취소한 경우
+                    console.log("사용자가 결제창을 닫았습니다.");
                 } else {
-                    // 그 외 에러 처리
+                    console.error("에러 발생:", error);
                     alert(error.message);
                 }
-            });
+            }
         });
     </script>
 </body>
